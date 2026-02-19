@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conference Schedule 2026</title>
+    <title>National Conference Agenda 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -17,33 +17,36 @@
             font-family: 'Merriweather', serif;
         }
         
-        /* RESPONSIVE PAGE CONTAINER */
         .a4-page {
             background: white;
             min-height: 100vh;
             width: 100%;
             margin: 0;
-            padding: 1rem; /* Compact padding for mobile */
+            padding: 1rem;
             box-shadow: none;
         }
 
-        /* Desktop / Tablet Styles (restore A4 look) */
         @media (min-width: 768px) {
             .a4-page {
                 max-width: 210mm;
                 margin: 2rem auto;
                 box-shadow: 0 0 15px rgba(0,0,0,0.1);
-                padding: 20mm;
+                padding: 15mm 20mm;
                 min-height: 297mm;
                 border-radius: 8px;
             }
         }
 
-        /* PRINT SPECIFIC STYLES */
+        /* Hide the print spacers on screen */
+        .print-header, .print-footer {
+            display: none;
+        }
+
         @media print {
             @page {
-                margin: 0;
-                size: auto;
+                /* Setting margin to 0 entirely removes the browser's Date, Time, and URL headers/footers */
+                margin: 0mm; 
+                size: A4;
             }
             body {
                 background: white;
@@ -54,7 +57,7 @@
                 margin: 0;
                 width: 100%;
                 max-width: 100%;
-                padding: 15mm 15mm !important; 
+                padding: 0 !important; /* Managed by the wrapper table now */
                 height: auto !important;
                 min-height: 0 !important;
                 border-radius: 0;
@@ -62,70 +65,52 @@
             .no-print {
                 display: none !important;
             }
+
+            /* Display the table wrappers ONLY during print to force margins on every page */
+            .print-header {
+                display: table-header-group !important;
+            }
+            .print-footer {
+                display: table-footer-group !important;
+            }
             
-            /* CRITICAL: Prevent breaking inside elements */
+            /* Crucial: Prevent splitting inside specific blocks */
             .no-break, 
             .bg-white, 
             .rounded-lg, 
-            table, 
-            tr, 
-            td, 
-            th,
-            h4, 
-            li {
+            .keynote-card,
+            h4, li {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Specific table break rules so we don't break the global wrapper table */
+            .content-table, .content-table tr, .content-table td, .content-table th {
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
             }
             
-            /* Allow breaks generally between sections */
-            section {
-                break-inside: auto;
-            }
-
-            /* Ensure table headers repeat if a table DOES split (fallback) */
-            thead { display: table-header-group; }
+            section { break-inside: auto; }
             
-            /* Remove rounded corners and overflow hidden for cleaner print lines */
-            .rounded-lg, .rounded {
-                border-radius: 0 !important;
-            }
-            .overflow-hidden {
-                overflow: visible !important;
-            }
+            .rounded-lg, .rounded { border-radius: 0 !important; }
+            .overflow-hidden { overflow: visible !important; }
+            .shadow-sm, .shadow-md { box-shadow: none !important; border: 1px solid #d1d5db !important; }
             
             .page-break {
                 page-break-before: always;
+                break-before: page;
                 height: 0;
                 display: block;
             }
-            
-            /* FORCE DOWN SPACER */
-            .print-spacer-top {
-                display: block !important;
-                height: 30mm; /* 3cm space at top of page */
-                width: 100%;
-                visibility: hidden;
-            }
-        }
-        
-        /* Hide spacer on screen so it doesn't look weird in preview */
-        .print-spacer-top {
-            display: none;
         }
     </style>
     <script>
         function toggleMenu() {
             var menu = document.getElementById('download-menu');
-            if (menu.classList.contains('hidden')) {
-                menu.classList.remove('hidden');
-                menu.classList.add('flex');
-            } else {
-                menu.classList.add('hidden');
-                menu.classList.remove('flex');
-            }
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
         }
 
-        // Close menu when clicking outside
         window.onclick = function(event) {
             if (!event.target.closest('#menu-container')) {
                 var menu = document.getElementById('download-menu');
@@ -140,24 +125,28 @@
             var header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
                 "xmlns:w='urn:schemas-microsoft-com:office:word' " +
                 "xmlns='http://www.w3.org/TR/REC-html40'>" +
-                "<head><meta charset='utf-8'><title>Conference Schedule</title>" +
+                "<head><meta charset='utf-8'><title>Conference Agenda</title>" +
                 "<style>" +
                 "body { font-family: sans-serif; }" +
                 "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }" +
                 "td, th { border: 1px solid #000; padding: 8px; text-align: left; }" +
                 "h1, h2, h3, h4 { margin-top: 20px; margin-bottom: 10px; }" +
                 ".bg-gray-100 { background-color: #f3f4f6; }" + 
-                "</style>" +
-                "</head><body>";
+                "</style></head><body>";
             
             var footer = "</body></html>";
-            var sourceHTML = header + document.getElementById("document-content").innerHTML + footer;
+            
+            // Grab the actual content, bypassing the print-margin wrapper table
+            var contentContainer = document.getElementById("main-content-cell");
+            var contentToExport = contentContainer ? contentContainer.innerHTML : document.getElementById("document-content").innerHTML;
+            
+            var sourceHTML = header + contentToExport + footer;
 
             var source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
             var fileDownload = document.createElement("a");
             document.body.appendChild(fileDownload);
             fileDownload.href = source;
-            fileDownload.download = 'Conference_Schedule_2026.doc';
+            fileDownload.download = 'National_Conference_Agenda_2026.doc';
             fileDownload.click();
             document.body.removeChild(fileDownload);
         }
@@ -165,258 +154,324 @@
 </head>
 <body class="text-gray-800">
 
-    <!-- Action Buttons Menu -->
+    <!-- Action Buttons -->
     <div id="menu-container" class="fixed top-4 right-4 no-print z-50 flex flex-col items-end">
-        <!-- Main Toggle Button -->
-        <button onclick="toggleMenu()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-full md:rounded shadow-lg flex items-center gap-2 transition cursor-pointer border border-gray-700 hover:scale-105 active:scale-95">
+        <button onclick="toggleMenu()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center gap-2 transition border border-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span class="hidden md:inline">Download Options</span>
-            <span class="md:hidden">Save</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            <span>Download</span>
         </button>
-
-        <!-- Hidden Horizontal Menu -->
-        <div id="download-menu" class="hidden mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-2 gap-2 animate-fade-in-down origin-top-right">
-            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 transition cursor-pointer whitespace-nowrap text-sm md:text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
+        <div id="download-menu" class="hidden mt-2 bg-white rounded shadow-xl border border-gray-200 p-2 flex-col gap-2">
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 text-sm">
                 PDF / Print
             </button>
-            <div class="w-px bg-gray-300 mx-1"></div>
-            <button onclick="downloadWord()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 transition cursor-pointer whitespace-nowrap text-sm md:text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            <button onclick="downloadWord()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 text-sm">
                 Word File
             </button>
         </div>
     </div>
 
-    <!-- Document Content -->
+    <!-- Document -->
     <div id="document-content" class="a4-page">
         
-        <!-- Header -->
-        <header class="text-center border-b-2 border-gray-800 pb-4 md:pb-6 mb-6 md:mb-8 no-break">
-            <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wide serif text-gray-900 mb-2">Conference Programme</h1>
-            <h2 class="text-lg md:text-xl text-gray-700 font-semibold">January 27–28, 2026</h2>
-        </header>
+        <!-- Wrapper table. This creates a repeated 15mm blank margin at the top & bottom of EVERY printed page -->
+        <table class="w-full border-collapse border-0">
+            <thead class="print-header">
+                <tr><th class="border-0 p-0 m-0"><div class="h-[15mm] w-full bg-transparent"></div></th></tr>
+            </thead>
+            <tfoot class="print-footer">
+                <tr><td class="border-0 p-0 m-0"><div class="h-[15mm] w-full bg-transparent"></div></td></tr>
+            </tfoot>
+            <tbody class="border-0">
+                <tr>
+                    <td id="main-content-cell" class="border-0 p-0 m-0 print:px-[15mm] align-top">
+                        
+                        <!-- Official Letterhead based on Image -->
+                        <header class="mb-8 no-break w-full border-b border-black pb-4">
+                            <div class="flex flex-row justify-between items-center w-full gap-2 print:flex-row print:flex">
+                                <!-- Left Logo -->
+                                <div class="w-[15%] flex justify-start">
+                                    <img src="rub.png" alt="Rajendra University Logo" class="h-16 sm:h-24 md:h-28 print:h-24 object-contain">
+                                </div>
 
-        <!-- DAY 1 -->
-        <section class="mb-8 md:mb-10">
-            <div class="flex items-center gap-3 md:gap-4 mb-4 no-break">
-                <div class="bg-gray-900 text-white py-1 px-3 md:px-4 font-bold rounded text-base md:text-lg">DAY 01</div>
-                <h3 class="text-xl md:text-2xl font-bold serif text-gray-800">Tuesday, 27th January 2026</h3>
-            </div>
+                                <!-- Center Text -->
+                                <div class="w-[70%] text-center flex flex-col items-center justify-center">
+                                    <h1 class="font-bold serif leading-snug sm:leading-tight" style="color: #8b008b;">
+                                        <span class="text-[12px] sm:text-lg md:text-[22px] print:text-[20px]">National Conference on Computational and</span><br>
+                                        <span class="text-[12px] sm:text-lg md:text-[22px] print:text-[20px]">Data Sciences in Mathematics, Statistics, and</span><br>
+                                        <span class="text-[14px] sm:text-xl md:text-[26px] print:text-[24px]">Computer Science-2026</span>
+                                    </h1>
+                                    <h2 class="text-[10px] sm:text-base md:text-[20px] print:text-[18px] font-bold serif mt-1 sm:mt-2" style="color: #008080;">
+                                        Date: 20<sup>th</sup> and 21<sup>st</sup> February, 2026
+                                    </h2>
+                                    <h3 class="text-[9px] sm:text-sm md:text-[16px] print:text-[15px] font-bold italic serif mt-1" style="color: #808000;">
+                                        Rajendra University, Balangir, Odisha, India
+                                    </h3>
+                                </div>
 
-            <!-- Inaugural Function -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-blue-600 pl-3 mb-3 text-blue-800">Inaugural Function (10:00 AM – 11:30 AM)</h4>
-                <div class="overflow-hidden rounded-lg border border-gray-300">
-                    <table class="w-full text-xs md:text-sm text-left">
-                        <thead class="bg-gray-100 text-gray-900 font-semibold border-b border-gray-300">
-                            <tr>
-                                <th class="py-2 px-2 md:px-4 w-1/4">Time</th>
-                                <th class="py-2 px-2 md:px-4 w-1/3">Event</th>
-                                <th class="py-2 px-2 md:px-4">Dignitary / Speaker</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:00 – 10:02 AM</td>
-                                <td class="py-2 px-2 md:px-4">Welcome Guest to Dais</td>
-                                <td class="py-2 px-2 md:px-4 text-gray-500 italic">—</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:02 – 10:07 AM</td>
-                                <td class="py-2 px-2 md:px-4">Lighting the Lamp</td>
-                                <td class="py-2 px-2 md:px-4 text-gray-500 italic">—</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:07 – 10:12 AM</td>
-                                <td class="py-2 px-2 md:px-4">Welcome Song</td>
-                                <td class="py-2 px-2 md:px-4 text-gray-500 italic">—</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:12 – 10:20 AM</td>
-                                <td class="py-2 px-2 md:px-4">Felicitation of Guest</td>
-                                <td class="py-2 px-2 md:px-4 text-gray-500 italic">—</td>
-                            </tr>
-                            <tr class="bg-gray-50">
-                                <td class="py-2 px-2 md:px-4 font-medium">10:20 – 10:25 AM</td>
-                                <td class="py-2 px-2 md:px-4 font-semibold">Welcome Address</td>
-                                <td class="py-2 px-2 md:px-4 font-semibold text-gray-900">Prof. P.K. Behera <span class="font-normal text-gray-600 text-xs block md:inline">(Hon'ble VC)</span></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:25 – 10:30 AM</td>
-                                <td class="py-2 px-2 md:px-4 font-semibold">Convenor Address</td>
-                                <td class="py-2 px-2 md:px-4">Dr. S.K. Panda</td>
-                            </tr>
-                            <tr class="bg-gray-50">
-                                <td class="py-2 px-2 md:px-4 font-medium">10:30 – 10:45 AM</td>
-                                <td class="py-2 px-2 md:px-4 font-semibold text-blue-800">Chief Guest Address</td>
-                                <td class="py-2 px-2 md:px-4 font-bold text-gray-900">Prof. Prafulla Ku. Mishra</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:45 – 10:55 AM</td>
-                                <td class="py-2 px-2 md:px-4">Address by Guest of Honour</td>
-                                <td class="py-2 px-2 md:px-4">H. Bhoi <span class="text-gray-600 text-xs md:inline">(Registrar)</span></td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">10:55 – 11:10 AM</td>
-                                <td class="py-2 px-2 md:px-4">Address</td>
-                                <td class="py-2 px-2 md:px-4">Chairperson Post Graduate Council (CPGC)</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">11:10 – 11:20 AM</td>
-                                <td class="py-2 px-2 md:px-4">Address</td>
-                                <td class="py-2 px-2 md:px-4">Comptroller of Finance (COF)</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">11:20 – 11:30 AM</td>
-                                <td class="py-2 px-2 md:px-4">Vote of Thanks</td>
-                                <td class="py-2 px-2 md:px-4">A. Naik</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                <!-- Right Logo -->
+                                <div class="w-[15%] flex justify-end">
+                                    <img src="pmusha.png" alt="PM-UShA Logo" class="h-12 sm:h-20 md:h-24 print:h-24 object-contain">
+                                </div>
+                            </div>
+                        </header>
 
-            <!-- Break -->
-            <div class="flex justify-center items-center py-2 bg-gray-100 rounded border border-gray-300 mb-6 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest no-break">
-                ☕ Tea Break: 11:30 AM – 12:00 PM
-            </div>
+                        <!-- DAY 1 -->
+                        <section class="mb-10">
+                            <div class="flex items-center gap-3 mb-5 border-b-2 border-gray-200 pb-2 no-break">
+                                <div class="bg-gray-900 text-white py-1 px-3 font-bold rounded text-sm md:text-base tracking-wider">DAY 01</div>
+                                <h3 class="text-lg md:text-xl font-bold serif text-gray-800">Friday, 20th February 2026</h3>
+                            </div>
 
-            <!-- FORCE PAGE BREAK HERE -->
-            <div class="page-break"></div>
-            
-            <!-- PRINT SPACER TO PUSH CONTENT DOWN ON PAGE 2 -->
-            <div class="print-spacer-top"></div>
+                            <div class="mb-4 flex items-center gap-2 text-sm font-semibold bg-gray-50 p-2 rounded border border-gray-200 no-break">
+                                <span class="text-blue-600">🕗 8:00 AM - 9:00 AM</span>
+                                <span class="text-gray-400">|</span>
+                                <span class="text-gray-800 uppercase tracking-wide">Registration</span>
+                            </div>
 
-            <!-- Session 1 -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-gray-800 pl-3 mb-3">Academic Session I (12:00 PM – 2:00 PM)</h4>
-                <div class="bg-white border border-gray-300 rounded p-3 md:p-4 shadow-sm">
-                    <ul class="space-y-2 text-xs md:text-sm">
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Chairperson:</span> <span>Prof. Girish Mishra (Odia)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Prof. Deependu Das (English)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Prof. Damodar Mishra (Hindi)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center mt-2 pt-2 border-t border-gray-200"><span class="font-bold w-24">Vote of Thanks:</span> <span>A.R. Gomango</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Note:</span> <span class="italic text-gray-500">Followed by Question & Answer Session</span></li>
-                    </ul>
-                </div>
-            </div>
+                            <!-- Inaugural Session -->
+                            <div class="mb-6">
+                                <h4 class="text-base font-bold border-l-4 border-blue-600 pl-3 mb-3 text-blue-900 uppercase tracking-wide">Inaugural Session</h4>
+                                <div class="overflow-hidden rounded border border-gray-300 shadow-sm">
+                                    <table class="w-full text-xs md:text-sm text-left content-table">
+                                        <thead class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300">
+                                            <tr>
+                                                <th class="py-2 px-3 w-1/4 border-r border-gray-200">Time</th>
+                                                <th class="py-2 px-3 w-1/3 border-r border-gray-200">Event</th>
+                                                <th class="py-2 px-3">Dignitary / Detail</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:30 – 9:35 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Welcoming Guest to the Dias</td><td class="py-1.5 px-3 text-gray-700">VC, Registrar, PGC, Convenor, Co-Convenors</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:35 – 9:40 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Lighting the Lamp</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:40 – 9:45 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Welcome Song</td><td class="py-1.5 px-3 text-gray-700">by Girls Student</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:45 – 9:50 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Offering of bouquet</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:50 – 9:55 AM</td><td class="py-1.5 px-3 font-semibold border-r border-gray-200">Welcome Address</td><td class="py-1.5 px-3 text-gray-800">Convenor</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">9:55 – 10:00 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Address by Co-convenor</td><td class="py-1.5 px-3 text-gray-800">Dr. J. K. Pradhan</td></tr>
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:00 – 10:05 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Address by Co-convenor</td><td class="py-1.5 px-3 text-gray-800">Dr. Sreelatha Ch.</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:05 – 10:10 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Address by CPGC</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:10 – 10:15 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Address by Registrar</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:15 – 10:20 AM</td><td class="py-1.5 px-3 font-bold border-r border-gray-200">Address by Hon’ble VC</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:20 – 10:25 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Opening of Proceeding</td><td class="py-1.5 px-3 text-gray-500">—</td></tr>
+                                            <tr class="bg-gray-50"><td class="py-1.5 px-3 font-medium border-r border-gray-200">10:25 – 10:30 AM</td><td class="py-1.5 px-3 border-r border-gray-200">Vote of Thanks</td><td class="py-1.5 px-3 text-gray-800">Dr. N.K Rout</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
 
-            <!-- Lunch -->
-            <div class="flex justify-center items-center py-2 bg-gray-100 rounded border border-gray-300 mb-6 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest no-break">
-                🍽️ Lunch Break: 2:00 PM – 2:30 PM
-            </div>
+                            <!-- Morning Keynotes -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- Keynote 1 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">10:30 – 11:30 AM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">1st Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Dr. Sk. Safique Ahmad</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Dept. of Mathematics, IIT Indore, MP</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> Numerical Linear Algebra Stability Analysis for Stochastic Differential Equations
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. J.K Pradhan</p>
+                                </div>
 
-            <!-- Session 2 -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-gray-800 pl-3 mb-3">Academic Session II (2:30 PM – 4:30 PM)</h4>
-                <div class="bg-white border border-gray-300 rounded p-3 md:p-4 shadow-sm">
-                    <ul class="space-y-2 text-xs md:text-sm">
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Chairperson:</span> <span>Prof. K.C. Pradhan (Odia)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Dr. Somnath Dash (Sanskrit)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Dr. Chakradhar Pradhan (Hindi)</span></li>
-                    </ul>
-                </div>
-            </div>
-        </section>
+                                <!-- Keynote 2 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">11:30 – 12:30 PM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">2nd Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Srinivas Sethi</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Head Dept. of CSE & Applications, IGIT, SARANG</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> EEG-Based Brain Analysis through Computational Data Science Techniques
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. D. Dansasna</p>
+                                </div>
+                            </div>
 
-        <!-- Page Break for Day 2 Separation (optional, but keeps logic clean) -->
-        <div class="page-break"></div>
+                            <!-- Keynote 3 (Full Width) -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative mb-6">
+                                <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">12:30 – 1:30 PM</span>
+                                <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">3rd Keynote Speaker</h5>
+                                <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Brojo Kishore Mishra</h4>
+                                <p class="text-xs text-gray-600 mb-2 italic">Head, CSE, NIST University, Berhampur</p>
+                                <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                    <span class="font-semibold" style="color: #8b008b;">Theme:</span> AI, Ethics, and Strategy for a Suatainable Digital Future
+                                </div>
+                                <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. N. K. Rout</p>
+                            </div>
 
-        <!-- DAY 2 -->
-        <section>
-            <div class="flex items-center gap-3 md:gap-4 mb-4 pt-4 no-break">
-                <div class="bg-gray-900 text-white py-1 px-3 md:px-4 font-bold rounded text-base md:text-lg">DAY 02</div>
-                <h3 class="text-xl md:text-2xl font-bold serif text-gray-800">Wednesday, 28th January 2026</h3>
-            </div>
+                            <div class="flex justify-center items-center py-2 bg-gray-100 rounded border border-gray-300 mb-6 text-xs font-bold text-gray-600 uppercase tracking-widest no-break">
+                                🍽️ Lunch Break
+                            </div>
 
-            <!-- Morning Session -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-gray-800 pl-3 mb-3">Academic Session I (10:00 AM – 12:00 PM)</h4>
-                <div class="bg-white border border-gray-300 rounded p-3 md:p-4 shadow-sm">
-                    <ul class="space-y-2 text-xs md:text-sm">
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Chairperson:</span> <span>Prof. Kalidas Mishra</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Chair:</span> <span>Prof. B.K. Panda</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Dr. P.K. Dash</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center mt-2 pt-2 border-t border-gray-200"><span class="font-bold w-24">Note:</span> <span class="italic text-gray-500">Followed by Question & Answer Session</span></li>
-                    </ul>
-                </div>
-            </div>
+                            <!-- Afternoon Sessions -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- Technical Papers -->
+                                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 shadow-sm no-break relative">
+                                    <span class="absolute top-0 right-0 bg-indigo-200 text-indigo-900 text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">3:00 – 5:00 PM</span>
+                                    <h5 class="text-sm text-indigo-900 font-bold uppercase tracking-wider mb-3">Parallel Technical Sessions</h5>
+                                    <ul class="space-y-3 text-xs text-gray-800">
+                                        <li class="flex items-start gap-2">
+                                            <span class="bg-indigo-600 text-white rounded-full w-4 h-4 flex items-center justify-center mt-0.5 text-[10px]">1</span>
+                                            <div><span class="font-semibold">Technical Paper Presentation Track 1</span><br><span class="text-gray-500">Room No-40</span></div>
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <span class="bg-indigo-600 text-white rounded-full w-4 h-4 flex items-center justify-center mt-0.5 text-[10px]">2</span>
+                                            <div><span class="font-semibold">Technical Paper Presentation Track 2</span><br><span class="text-gray-500">Room No-60</span></div>
+                                        </li>
+                                    </ul>
+                                </div>
 
-            <!-- Break -->
-            <div class="flex justify-center items-center py-2 bg-gray-100 rounded border border-gray-300 mb-6 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest no-break">
-                ☕ Tea Break: 12:00 PM – 12:15 PM
-            </div>
+                                <!-- Afternoon Keynotes List -->
+                                <div class="space-y-4">
+                                    <!-- Keynote 4 -->
+                                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                        <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">3:30 – 4:30 PM</span>
+                                        <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">4th Keynote Speaker</h5>
+                                        <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Arun Tripathy</h4>
+                                        <p class="text-xs text-gray-600 mb-2 italic">Professor, Dept. of Mathematics, Sambalpur University, Jyoti Vihar, Burla</p>
+                                        <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                            <span class="font-semibold" style="color: #8b008b;">Theme:</span> Machine Learning through Mathematical Language
+                                        </div>
+                                        <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. J.K Pradhan</p>
+                                    </div>
+                                    <!-- Keynote 5 -->
+                                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                        <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">4:30 – 5:30 PM</span>
+                                        <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">5th Keynote Speaker</h5>
+                                        <h4 class="text-sm font-bold text-gray-900 mb-1">Biswajit Nayak</h4>
+                                        <p class="text-xs text-gray-600 mb-2 italic">Director, Advanced Analytics & Data Science, Grid Analytics India Pvt. Ltd. New Delhi</p>
+                                        <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                            <span class="font-semibold" style="color: #8b008b;">Theme:</span> Data Science Necessary Skill, Concept and Code
+                                        </div>
+                                        <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. Sreelatha Ch.</p>
+                                    </div>
+                                </div>
+                            </div>
 
-            <!-- Mid Day Session -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-gray-800 pl-3 mb-3">Academic Session II (12:15 PM – 2:00 PM)</h4>
-                <div class="bg-white border border-gray-300 rounded p-3 md:p-4 shadow-sm">
-                    <ul class="space-y-2 text-xs md:text-sm">
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Adbeth Kumar (Hindi)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Sarat Ku Jena (Odia)</span></li>
-                        <li class="flex flex-col md:flex-row md:items-center"><span class="font-bold w-24">Speaker:</span> <span>Brajasundar Mishra (Sanskrit)</span></li>
-                    </ul>
-                </div>
-            </div>
+                            <!-- Cultural Program -->
+                             <div class="mb-4 flex items-center gap-2 text-sm font-semibold bg-[#f9f0ff] p-3 rounded border border-[#e8cfff] text-[#8b008b] no-break">
+                                <span>🎭</span>
+                                <span class="uppercase tracking-wide">Cultural Program (Evening)</span>
+                            </div>
 
-            <!-- Lunch -->
-            <div class="flex justify-center items-center py-2 bg-gray-100 rounded border border-gray-300 mb-6 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest no-break">
-                🍽️ Lunch Break: 2:00 PM – 2:30 PM
-            </div>
+                        </section>
 
-             <!-- Afternoon Session -->
-             <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-gray-800 pl-3 mb-3">Academic Session III (2:30 PM – 4:30 PM)</h4>
-                <div class="bg-white border border-gray-300 rounded p-3 md:p-4 shadow-sm flex items-center gap-3">
-                   <div class="bg-blue-100 text-blue-800 p-2 rounded">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                   </div>
-                   <div>
-                       <span class="font-bold text-gray-900 block text-sm md:text-base">Paper Presentations</span>
-                       <span class="text-xs md:text-sm text-gray-600">Parallel Sessions</span>
-                   </div>
-                </div>
-            </div>
+                        <div class="page-break"></div>
 
-            <!-- Valedictory -->
-            <div class="mb-6">
-                <h4 class="text-base md:text-lg font-bold border-l-4 border-blue-600 pl-3 mb-3 text-blue-800">Valedictory Session (4:30 PM – 5:30 PM)</h4>
-                <div class="overflow-hidden rounded-lg border border-gray-300">
-                    <table class="w-full text-xs md:text-sm text-left">
-                        <thead class="bg-gray-100 text-gray-900 font-semibold border-b border-gray-300">
-                            <tr>
-                                <th class="py-2 px-2 md:px-4 w-1/4">Time</th>
-                                <th class="py-2 px-2 md:px-4" colspan="2" style="text-align: center;">Guest</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr>
-                                <td class="py-2 px-2 md:px-4 font-medium">4:30 – 5:30 PM</td>
-                                <td class="py-2 px-2 md:px-4 font-semibold" colspan="2" style="text-align: center;">Chief Guest: M. Pati</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+                        <!-- DAY 2 -->
+                        <section>
+                            <div class="flex items-center gap-3 mb-5 border-b-2 border-gray-200 pb-2 pt-4 no-break">
+                                <div class="bg-gray-900 text-white py-1 px-3 font-bold rounded text-sm md:text-base tracking-wider">DAY 02</div>
+                                <h3 class="text-lg md:text-xl font-bold serif text-gray-800">Saturday, 21st February 2026</h3>
+                            </div>
 
-        <!-- Footer -->
-        <footer class="mt-12 text-center text-xs text-gray-500 border-t border-gray-300 pt-4">
+                            <div class="mb-6 flex items-center gap-2 text-sm font-semibold bg-gray-50 p-2 rounded border border-gray-200 no-break">
+                                <span class="text-blue-600">🕗 8:00 AM - 9:00 AM</span>
+                                <span class="text-gray-400">|</span>
+                                <span class="text-gray-800 uppercase tracking-wide">Registration</span>
+                            </div>
 
-        </footer>
+                            <!-- Morning Keynotes Day 2 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- Keynote 1 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">9:30 – 10:30 AM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">1st Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Monalisha Pattnaik</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Head Dept. of Statistics, Sambalpur University</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> AI-Powered Predictive Analytics: From Insight to Impact
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. Sreelatha Ch.</p>
+                                </div>
 
+                                <!-- Keynote 2 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">10:30 – 11:30 AM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">2nd Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Siba K. Udgata</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">School of Computer and Information Sciences, Uni of Hyderabad</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> GenX-AI: A Generative and Explainable AI Tool for Reliable Intelligent Systems
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. D. Dansasna</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- Keynote 3 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">11:30 – 12:30 PM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">3rd Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Priya Ranjan Dash</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Head Dept. of Statistics, Utkal University, Bhubaneswar</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> Statistical modelling and Time Series analysis for Real-World Application
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Bishnupriya Behera</p>
+                                </div>
+
+                                <!-- Keynote 4 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">12:30 – 1:30 PM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">4th Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Satyabrata Das</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Dept. of Computer Science and Engineering VSSUT, Burla</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> Application of IoT in Power and Energy Systems
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. N.K. Rout</p>
+                                </div>
+                            </div>
+
+                            <!-- Lunch & Poster Session -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="flex justify-center items-center py-4 bg-gray-100 rounded border border-gray-300 text-xs font-bold text-gray-600 uppercase tracking-widest no-break h-full">
+                                    🍽️ Lunch Break
+                                </div>
+                                <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 shadow-sm no-break relative flex flex-col justify-center">
+                                    <span class="absolute top-0 right-0 bg-[#008080] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">1:00 – 4:00 PM</span>
+                                    <h5 class="text-sm font-bold uppercase tracking-wider mb-1" style="color: #008080;">Poster Presentation</h5>
+                                    <p class="text-xs text-gray-700">Display and Interaction (Room No-67)</p>
+                                </div>
+                            </div>
+
+                            <!-- Afternoon Session & Valedictory -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <!-- Keynote 5 -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm keynote-card relative">
+                                    <span class="absolute top-0 right-0 bg-[#8b008b] text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">3:30 – 4:30 PM</span>
+                                    <h5 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">5th Keynote Speaker</h5>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-1">Prof. Gauranga Charan Samanta</h4>
+                                    <p class="text-xs text-gray-600 mb-2 italic">Head Dept. of Mathematics, Fakir Mohan University, Balasore</p>
+                                    <div class="bg-gray-50 p-2 rounded text-xs mb-2 border border-gray-100">
+                                        <span class="font-semibold" style="color: #8b008b;">Theme:</span> Theoretical Cosmology and Mathematical Finance
+                                    </div>
+                                    <p class="text-xs text-gray-500"><span class="font-semibold">Session Coordinator:</span> Dr. J.K. Pradhan</p>
+                                </div>
+
+                                <!-- Valedictory Session -->
+                                <div class="bg-gray-900 text-white rounded-lg p-4 shadow-sm no-break flex flex-col justify-center">
+                                    <h4 class="text-base font-bold text-[#FFFFFF] uppercase tracking-widest mb-3 text-center border-b border-gray-700 pb-2">Valedictory Session</h4>
+                                    <ul class="space-y-3 text-sm">
+                                        <li class="flex items-center gap-3">
+                                            <span class="text-xl">🎓</span>
+                                            <span>Certificate Distribution to Participants</span>
+                                        </li>
+                                        <li class="flex items-center gap-3">
+                                            <span class="text-xl">🎤</span>
+                                            <span>Vote of Thanks by <span class="font-semibold">Dr. Sreelatha Ch.</span></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </section>
+
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
 </body>
